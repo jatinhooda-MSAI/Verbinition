@@ -45,8 +45,12 @@ MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"
 LAYER = 20
 D_MODEL = 3584
 DEFAULT_NLA_INFERENCE_PATHS = (
+    Path("nla-inference/nla_inference.py"),
+    Path("nla-upstream/nla_inference.py"),
     Path("../nla-upstream/nla_inference.py"),
     Path("../nla-inference/nla_inference.py"),
+    Path("/content/nla-inference/nla_inference.py"),
+    Path("/content/nla-upstream/nla_inference.py"),
 )
 
 # Probes span semantically distinct categories. If NLA is working, the AV's
@@ -147,9 +151,11 @@ def _resolve_nla_inference_path(path: Path | None) -> Path:
             raise FileNotFoundError(f"nla_inference.py not found: {path}")
         return path
 
+    script_dir = Path(__file__).resolve().parent
     for candidate in DEFAULT_NLA_INFERENCE_PATHS:
-        if candidate.exists():
-            return candidate
+        for resolved in (candidate, script_dir / candidate):
+            if resolved.exists():
+                return resolved
 
     candidates = ", ".join(str(p) for p in DEFAULT_NLA_INFERENCE_PATHS)
     raise FileNotFoundError(

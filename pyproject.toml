@@ -16,8 +16,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# AV/AR serving via SGLang (needed for NLA inference)
-sglang = ["sglang[all]>=0.5.6"]
+# AV serving via SGLang (needed for NLA inference). Keep this exact: newer
+# SGLang stacks have different pinned serving dependencies.
+sglang = ["sglang==0.5.6"]
 # Agent harness with MCP tools (D4+)
 agent = ["mcp>=1.0"]
 # LoRA fine-tuning of the AV (D15+)
