@@ -7,13 +7,13 @@ surfaced by the NLA.
 
 ## Status
 
-Day 2 of 21. Day 1 smoke test is green; current focus is one benign
-tool-use trajectory with NLA-verbalized decision activations.
+Day 2 of 21. Day 1 smoke test is green; current focus is a tiny
+three-condition tool-use battery with NLA-verbalized decision activations.
 
 ## Quick start
 
 See [day1.md](day1.md) for the NLA smoke-test workflow and [day2.md](day2.md)
-for the first agent tool-use trajectory.
+for the first agent tool-use battery.
 
 ## Three-week plan
 
@@ -29,12 +29,12 @@ for the first agent tool-use trajectory.
 ```
 vac/
 ├── day1.md             setup notes and smoke-test workflow
-├── day2.md             first benign agent trajectory workflow
+├── day2.md             first three-condition agent battery workflow
 ├── smoke_test_nla.py   Day 1 activation extraction / NLA decode check
-├── agent_probe.py      Day 2 one-tool agent trajectory extraction
+├── agent_probe.py      Day 2 local-tool agent trajectory extraction
 ├── src/vac/            library package namespace
 ├── pyproject.toml      Python dependencies and optional extras
-└── data/               generated activations, checkpoints, results (gitignored)
+└── data/runs/          named generated trajectories and NLA results (gitignored)
 ```
 
 ## Upstream artifacts
