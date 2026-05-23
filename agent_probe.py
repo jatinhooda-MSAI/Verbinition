@@ -266,6 +266,19 @@ def execute_tool(tool_call: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "error": str(exc), "arguments": arguments}
 
 
+def plain_tool_result_text(tool_result: dict[str, Any]) -> str:
+    if not tool_result.get("ok"):
+        return f"Tool error: {tool_result.get('error', 'unknown error')}"
+    if "content" in tool_result:
+        return str(tool_result["content"])
+    if "value" in tool_result:
+        return (
+            "Calculator result: "
+            f"{tool_result.get('expression', 'expression')} = {tool_result['value']}"
+        )
+    return json.dumps(tool_result, ensure_ascii=False)
+
+
 def write_outputs(
     trajectories: list[dict[str, Any]],
     activation_rows: list[dict[str, Any]],
@@ -345,6 +358,14 @@ def run_scenario(
         add_generation_prompt=False,
     )
     tool_result_activation = extract_last_token_activation(loaded, tool_result_prompt)
+    tool_content_plain_prompt = (
+        f"User task:\n{scenario['user']}\n\n"
+        f"Plain tool result content:\n{plain_tool_result_text(tool_result)}"
+    )
+    tool_content_plain_activation = extract_last_token_activation(
+        loaded,
+        tool_content_plain_prompt,
+    )
 
     final_messages = [
         *tool_messages,
@@ -388,6 +409,14 @@ def run_scenario(
             "activation_vector": tool_result_activation,
         },
         {
+            "probe_id": f"{scenario['scenario_id']}:tool_content_plain_end",
+            "scenario_id": scenario["scenario_id"],
+            "condition": scenario["condition"],
+            "decision_kind": "tool_content_plain_end",
+            "prompt": tool_content_plain_prompt,
+            "activation_vector": tool_content_plain_activation,
+        },
+        {
             "probe_id": f"{scenario['scenario_id']}:final_response",
             "scenario_id": scenario["scenario_id"],
             "condition": scenario["condition"],
@@ -424,6 +453,14 @@ def run_scenario(
             },
             {
                 "probe_id": activation_rows[3]["probe_id"],
+                "decision_kind": "tool_content_plain_end",
+                "definition": (
+                    "last token after a plain-text diagnostic rendering of tool content"
+                ),
+                "activation_vector": tool_content_plain_activation,
+            },
+            {
+                "probe_id": activation_rows[4]["probe_id"],
                 "decision_kind": "final_response",
                 "definition": "last prompt token before the final user-facing response",
                 "activation_vector": final_activation,

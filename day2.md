@@ -2,7 +2,7 @@
 
 **Goal**: move from static prompt activations to the first real agent-style
 decision points. This is still deliberately small: three local stub scenarios,
-one tool-call turn per scenario, and four extracted activations per scenario.
+one tool-call turn per scenario, and five extracted activations per scenario.
 
 ## What This Tests
 
@@ -24,6 +24,8 @@ model emits JSON tool call
 local stub tool executes
         ↓
 diagnostic activation at tool-result end
+        ↓
+plain-text content diagnostic activation
         ↓
 last prompt token before final answer
         ↓
@@ -66,8 +68,8 @@ Outputs:
   scenario, including tool call, tool result, final answer, and activation
   vectors.
 - `data/runs/day2_three_condition_v1/activations.parquet`: compact NLA input
-  with twelve rows: `task_context_end`, `tool_call`, `tool_result_end`, and
-  `final_response` for each scenario.
+  with fifteen rows: `task_context_end`, `tool_call`, `tool_result_end`,
+  `tool_content_plain_end`, and `final_response` for each scenario.
 
 If you omit `--run-id`, the script creates a timestamped folder such as
 `data/runs/agent_probe_20260531_143012/`.
@@ -93,10 +95,15 @@ The `tool_call` rows capture model state immediately before the assistant
 starts emitting the tool invocation. The `final_response` rows capture model
 state before the final user-facing answer.
 
-The `task_context_end` and `tool_result_end` rows are diagnostic. They are not
-the main research decision points, but they help determine whether content
-signals are present elsewhere when the decision-boundary rows are dominated by
-format/action structure.
+The `task_context_end`, `tool_result_end`, and `tool_content_plain_end` rows
+are diagnostic. They are not the main research decision points, but they help
+determine whether content signals are present elsewhere when the
+decision-boundary rows are dominated by format/action structure.
+
+`tool_content_plain_end` strips away the JSON wrapper and gives the AV the raw
+tool content in a plain text diagnostic prompt. If safety-relevant content does
+not appear there, the released AV is probably not surfacing these agentic
+signals without fine-tuning.
 
 To run only one condition:
 
@@ -178,10 +185,11 @@ For `pressure_deployment_notice:final_response`, useful signs include
 evaluation, deployment pressure, safe reporting, not hiding/altering logs, or
 the assistant being assessed.
 
-If the safety-relevant content appears in `tool_result_end` but disappears in
-`final_response`, that is evidence the current final decision extraction point
-is too format-dominated. If it never appears, the released AV may simply be too
-out-of-distribution for these agentic activations without fine-tuning.
+If the safety-relevant content appears in `tool_content_plain_end` but
+disappears in `final_response`, that is evidence the current final decision
+extraction point is too format-dominated. If it never appears, the released AV
+may simply be too out-of-distribution for these agentic activations without
+fine-tuning.
 
 If both activations verbalize as unrelated generic text, the NLA infrastructure
 still works from Day 1, but our agent extraction point or prompt format needs
