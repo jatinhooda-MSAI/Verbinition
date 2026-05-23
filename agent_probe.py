@@ -313,6 +313,9 @@ def run_scenario(
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": scenario["user"]},
     ]
+    task_prompt = render_chat(loaded.tokenizer, tool_messages, add_generation_prompt=False)
+    task_activation = extract_last_token_activation(loaded, task_prompt)
+
     tool_prompt = render_chat(loaded.tokenizer, tool_messages, add_generation_prompt=True)
     tool_activation = extract_last_token_activation(loaded, tool_prompt)
     tool_call_text = generate_text(loaded, tool_prompt, max_new_tokens=max_tool_tokens)
@@ -330,14 +333,26 @@ def run_scenario(
         else {"ok": False, "error": tool_call_error}
     )
 
+    tool_result_content = f"Tool result:\n{json.dumps(tool_result, ensure_ascii=False)}"
+    tool_result_messages = [
+        *tool_messages,
+        {"role": "assistant", "content": tool_call_text},
+        {"role": "user", "content": tool_result_content},
+    ]
+    tool_result_prompt = render_chat(
+        loaded.tokenizer,
+        tool_result_messages,
+        add_generation_prompt=False,
+    )
+    tool_result_activation = extract_last_token_activation(loaded, tool_result_prompt)
+
     final_messages = [
         *tool_messages,
         {"role": "assistant", "content": tool_call_text},
         {
             "role": "user",
             "content": (
-                "Tool result:\n"
-                f"{json.dumps(tool_result, ensure_ascii=False)}\n\n"
+                f"{tool_result_content}\n\n"
                 "Now answer the user's original request in one concise sentence. "
                 "Do not call another tool."
             ),
@@ -349,12 +364,28 @@ def run_scenario(
 
     activation_rows = [
         {
+            "probe_id": f"{scenario['scenario_id']}:task_context_end",
+            "scenario_id": scenario["scenario_id"],
+            "condition": scenario["condition"],
+            "decision_kind": "task_context_end",
+            "prompt": scenario["user"],
+            "activation_vector": task_activation,
+        },
+        {
             "probe_id": f"{scenario['scenario_id']}:tool_call",
             "scenario_id": scenario["scenario_id"],
             "condition": scenario["condition"],
             "decision_kind": "tool_call",
             "prompt": scenario["user"],
             "activation_vector": tool_activation,
+        },
+        {
+            "probe_id": f"{scenario['scenario_id']}:tool_result_end",
+            "scenario_id": scenario["scenario_id"],
+            "condition": scenario["condition"],
+            "decision_kind": "tool_result_end",
+            "prompt": tool_result_content,
+            "activation_vector": tool_result_activation,
         },
         {
             "probe_id": f"{scenario['scenario_id']}:final_response",
@@ -373,12 +404,26 @@ def run_scenario(
         "decision_points": [
             {
                 "probe_id": activation_rows[0]["probe_id"],
+                "decision_kind": "task_context_end",
+                "definition": (
+                    "last token after task and tool instructions, before assistant prefix"
+                ),
+                "activation_vector": task_activation,
+            },
+            {
+                "probe_id": activation_rows[1]["probe_id"],
                 "decision_kind": "tool_call",
                 "definition": "last prompt token before the assistant tool-call turn",
                 "activation_vector": tool_activation,
             },
             {
-                "probe_id": activation_rows[1]["probe_id"],
+                "probe_id": activation_rows[2]["probe_id"],
+                "decision_kind": "tool_result_end",
+                "definition": "last token immediately after the tool result message",
+                "activation_vector": tool_result_activation,
+            },
+            {
+                "probe_id": activation_rows[3]["probe_id"],
                 "decision_kind": "final_response",
                 "definition": "last prompt token before the final user-facing response",
                 "activation_vector": final_activation,
