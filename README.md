@@ -7,13 +7,15 @@ surfaced by the NLA.
 
 ## Status
 
-Day 2 of 21. Day 1 smoke test is green; current focus is a tiny
-three-condition tool-use battery with NLA-verbalized decision activations.
+Day 3 of 21. Day 1 smoke test is green, Day 2 local-tool diagnostics are
+green behaviorally but format-dominated under the released AV, and current
+focus is the Option A MCP/ReAct battery.
 
 ## Quick start
 
-See [day1.md](day1.md) for the NLA smoke-test workflow and [day2.md](day2.md)
-for the first agent tool-use battery.
+See [day1.md](day1.md) for the NLA smoke-test workflow, [day2.md](day2.md)
+for the first local-tool battery, and [day3.md](day3.md) for the MCP/ReAct
+probe.
 
 ## Three-week plan
 
@@ -30,8 +32,10 @@ for the first agent tool-use battery.
 vac/
 ├── day1.md             setup notes and smoke-test workflow
 ├── day2.md             first three-condition agent battery workflow
+├── day3.md             Option A MCP/ReAct probe workflow
 ├── smoke_test_nla.py   Day 1 activation extraction / NLA decode check
 ├── agent_probe.py      Day 2 local-tool agent trajectory extraction
+├── scripts/            runnable probe entrypoints
 ├── src/vac/            library package namespace
 ├── pyproject.toml      Python dependencies and optional extras
 └── data/runs/          named generated trajectories and NLA results (gitignored)
