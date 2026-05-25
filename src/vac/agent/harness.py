@@ -242,6 +242,13 @@ def default_mcp_server_env() -> dict[str, str]:
     return env
 
 
+def mcp_server_env(documents_path: Path | None = None) -> dict[str, str]:
+    env = default_mcp_server_env()
+    if documents_path is not None:
+        env["VAC_DOCUMENTS_PATH"] = str(documents_path)
+    return env
+
+
 class MCPStdioToolClient:
     """Small stdio MCP client that launches the local tool server."""
 
@@ -552,13 +559,15 @@ async def run_probe(
     trajectory_path: Path,
     parquet_path: Path,
     env_path: Path,
+    documents_path: Path | None = None,
+    scenarios_override: list[Scenario] | None = None,
     max_tool_steps: int,
     max_tool_tokens: int,
     max_final_tokens: int,
 ) -> None:
-    scenarios = select_scenarios(scenario_ids)
+    scenarios = scenarios_override or select_scenarios(scenario_ids)
 
-    async with MCPStdioToolClient() as mcp_client:
+    async with MCPStdioToolClient(env=mcp_server_env(documents_path)) as mcp_client:
         tool_specs = await mcp_client.list_tools()
         print("MCP tools:", ", ".join(tool.name for tool in tool_specs))
         loaded = load_model(model_name)

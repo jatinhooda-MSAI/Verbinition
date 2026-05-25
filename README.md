@@ -14,8 +14,8 @@ focus is the Option A MCP/ReAct battery.
 ## Quick start
 
 See [day1.md](day1.md) for the NLA smoke-test workflow, [day2.md](day2.md)
-for the first local-tool battery, and [day3.md](day3.md) for the MCP/ReAct
-probe.
+for the first local-tool battery, [day3.md](day3.md) for the MCP/ReAct probe,
+and [option_b.md](option_b.md) for AV LoRA domain adaptation.
 
 ## Three-week plan
 
@@ -33,6 +33,7 @@ vac/
 ├── day1.md             setup notes and smoke-test workflow
 ├── day2.md             first three-condition agent battery workflow
 ├── day3.md             Option A MCP/ReAct probe workflow
+├── option_b.md         full AV LoRA domain-adaptation workflow
 ├── smoke_test_nla.py   Day 1 activation extraction / NLA decode check
 ├── agent_probe.py      Day 2 local-tool agent trajectory extraction
 ├── scripts/            runnable probe entrypoints

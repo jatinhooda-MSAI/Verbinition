@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -22,6 +23,7 @@ if str(SRC_DIR) not in sys.path:
 
 
 from vac.agent.extraction import MODEL_NAME
+from vac.agent.generated_battery import generate_battery
 from vac.agent.harness import default_run_id, resolve_output_paths, run_probe
 from vac.agent.scenarios import SCENARIOS, scenario_ids
 
@@ -52,6 +54,18 @@ def main() -> None:
         help="Print available scenario ids and exit.",
     )
     parser.add_argument(
+        "--battery",
+        choices=("static", "full"),
+        default="static",
+        help="Use the original 9 static scenarios or generate a balanced full battery.",
+    )
+    parser.add_argument(
+        "--per-condition",
+        type=int,
+        default=150,
+        help="Number of scenarios per condition for --battery full.",
+    )
+    parser.add_argument(
         "--trajectory",
         type=Path,
         default=None,
@@ -75,7 +89,11 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.list_scenarios:
-        for scenario in SCENARIOS:
+        if args.battery == "full":
+            scenarios = generate_battery(args.per_condition).scenarios
+        else:
+            scenarios = list(SCENARIOS)
+        for scenario in scenarios:
             print(f"{scenario.scenario_id}\t{scenario.condition}")
         return
 
@@ -87,13 +105,46 @@ def main() -> None:
         parquet_path=args.parquet,
         env_path=args.env,
     )
+    scenarios_override = None
+    documents_path = None
+    if args.battery == "full":
+        battery = generate_battery(args.per_condition)
+        scenario_pool = {scenario.scenario_id: scenario for scenario in battery.scenarios}
+        if "all" in selected:
+            scenarios_override = battery.scenarios
+        else:
+            unknown = [scenario_id for scenario_id in selected if scenario_id not in scenario_pool]
+            if unknown:
+                valid_preview = ", ".join(["all", *list(scenario_pool)[:20]])
+                raise ValueError(
+                    f"unknown generated scenario(s): {unknown}. "
+                    f"Valid examples: {valid_preview}, ..."
+                )
+            scenarios_override = [scenario_pool[scenario_id] for scenario_id in selected]
+        documents_path = trajectory_path.parent / "generated_documents.json"
+        documents_path.parent.mkdir(parents=True, exist_ok=True)
+        documents_path.write_text(
+            json.dumps(battery.documents, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
 
     print(f"Run id: {run_id}")
     print(f"Model: {args.model}")
-    print(f"Scenarios: {', '.join(scenario_ids() if 'all' in selected else selected)}")
+    if scenarios_override is None:
+        printable_scenarios = scenario_ids() if "all" in selected else selected
+        scenario_label = ", ".join(printable_scenarios)
+    else:
+        printable_scenarios = [scenario.scenario_id for scenario in scenarios_override]
+        preview = ", ".join(printable_scenarios[:12])
+        suffix = " ..." if len(printable_scenarios) > 12 else ""
+        scenario_label = f"{len(printable_scenarios)} total: {preview}{suffix}"
+    print(f"Battery: {args.battery}")
+    print(f"Scenarios: {scenario_label}")
     print(f"Trajectory path: {trajectory_path}")
     print(f"Activation parquet path: {parquet_path}")
     print(f"Env path: {env_path}")
+    if documents_path is not None:
+        print(f"Generated documents path: {documents_path}")
 
     asyncio.run(
         run_probe(
@@ -103,6 +154,8 @@ def main() -> None:
             trajectory_path=trajectory_path,
             parquet_path=parquet_path,
             env_path=env_path,
+            documents_path=documents_path,
+            scenarios_override=scenarios_override,
             max_tool_steps=args.max_tool_steps,
             max_tool_tokens=args.max_tool_tokens,
             max_final_tokens=args.max_final_tokens,

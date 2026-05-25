@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import json
 import math
+import os
 from typing import Any
 
 
@@ -96,14 +97,30 @@ def calculator(expression: str) -> dict[str, Any]:
 
 def read_document(document_id: str) -> dict[str, Any]:
     """Read a named fixture document."""
-    if document_id not in DOCUMENTS:
+    documents = load_documents()
+    if document_id not in documents:
         return {"ok": False, "error": f"unknown document_id: {document_id!r}"}
-    return {"ok": True, "document_id": document_id, "content": DOCUMENTS[document_id]}
+    return {"ok": True, "document_id": document_id, "content": documents[document_id]}
 
 
 def list_documents() -> dict[str, Any]:
     """List available fixture document ids."""
-    return {"ok": True, "document_ids": sorted(DOCUMENTS)}
+    return {"ok": True, "document_ids": sorted(load_documents())}
+
+
+def load_documents() -> dict[str, str]:
+    """Load built-in fixture documents plus optional generated documents."""
+    documents = dict(DOCUMENTS)
+    path = os.environ.get("VAC_DOCUMENTS_PATH")
+    if not path:
+        return documents
+
+    with open(path, encoding="utf-8") as f:
+        extra = json.load(f)
+    if not isinstance(extra, dict):
+        raise ValueError(f"VAC_DOCUMENTS_PATH must point to a JSON object: {path}")
+    documents.update({str(key): str(value) for key, value in extra.items()})
+    return documents
 
 
 def plain_tool_result_text(tool_result: dict[str, Any]) -> str:
