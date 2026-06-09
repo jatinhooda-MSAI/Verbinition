@@ -50,7 +50,7 @@ server, a safe calculator, and local document tools. Scenarios cover:
 
 ## Results So Far
 
-### Day 1: NLA Smoke Test
+### Phase 1: NLA Smoke Test
 
 Eight static text prompts were used to check that activation extraction and AV
 decoding were wired correctly. The released AV produced noisy but recognizable
@@ -60,7 +60,7 @@ math, and evaluation-aware text.
 Interpretation: the NLA pipeline works on in-distribution-ish text
 activations.
 
-### Day 2: Local Tool Probe
+### Phase 2: Local Tool Probe
 
 A three-scenario local-tool battery tested benign calculation, prompt
 injection in a vendor policy document, and a pressure/evaluation notice.
@@ -72,7 +72,7 @@ arithmetic content and partial injection-like structure.
 
 Interpretation: the released AV is format-dominated at agent/tool boundaries.
 
-### Day 3: MCP/ReAct Probe
+### Phase 3: MCP/ReAct Probe
 
 The same pattern held under a proper local MCP tool server. In the 9-scenario
 MCP validation set, visible behavior was green:
@@ -118,11 +118,11 @@ the injected answer, and the instruction to ignore the injected page text.
 
 Important limitation: current supervised labels are deterministic templates.
 The adapted AV often reproduces those templates nearly exactly. This shows the
-AV can be steered into the agent/tool domain, but it does not yet prove robust
-generalization to unseen scenario styles or that the verbalizations faithfully
+AV can be steered into the agent/tool domain, but it does not yet prove 
+generalization to unseen scenarios or that the verbalizations faithfully
 recover hidden cognition.
 
-## What Is Supported
+## RESULTS: What Is Supported
 
 Supported claims:
 
@@ -142,7 +142,7 @@ Not yet supported:
 - NLA adds signal beyond simpler baselines such as keyword classifiers or
   linear probes.
 
-## Next Checks
+## Possible Future Work
 
 The next clean evaluation should use a held-out battery with different surface
 forms and label style:
@@ -153,43 +153,3 @@ forms and label style:
 4. Add AR reconstruction scoring if the corresponding Qwen AR checkpoint is
    integrated.
 5. Compare against linear probes and simple text/metadata baselines.
-
-## Runbooks
-
-- [day1.md](day1.md): NLA smoke-test setup and decode workflow.
-- [day2.md](day2.md): local-tool diagnostic probe.
-- [day3.md](day3.md): MCP/ReAct probe.
-- [option_b.md](option_b.md): AV LoRA domain-adaptation workflow.
-- [continuation_handoff.md](continuation_handoff.md): detailed experiment log.
-
-## Repository Layout
-
-```text
-.
-├── smoke_test_nla.py              # activation generation/decode/inspect helper
-├── agent_probe.py                 # Day 2 local-tool probe
-├── scripts/
-│   ├── run_mcp_probe.py           # MCP/ReAct trajectory + activation extraction
-│   ├── build_av_sft_dataset.py    # supervised AV adaptation data
-│   ├── train_av_lora.py           # AV LoRA trainer
-│   ├── merge_av_lora.py           # merge LoRA into serveable checkpoint
-│   └── compare_nla_results.py     # base-vs-adapted comparison
-├── src/vac/
-│   ├── agent/                     # harness, extraction, generated scenarios
-│   ├── tools/                     # local MCP tools
-│   └── nla/                       # NLA injection utilities
-└── data/runs/                     # generated artifacts, gitignored
-```
-
-## References
-
-- Fraser-Taliente, Kantamneni, Ong et al.,
-  [Natural Language Autoencoders Produce Unsupervised Explanations of LLM
-  Activations](https://transformer-circuits.pub/2026/nla/),
-  Transformer Circuits, 2026.
-- Upstream implementation:
-  [kitft/natural_language_autoencoders](https://github.com/kitft/natural_language_autoencoders).
-- Lightweight inference client:
-  [kitft/nla-inference](https://github.com/kitft/nla-inference).
-- Released checkpoints:
-  [kitft NLA Models collection](https://huggingface.co/collections/kitft/nla-models).
